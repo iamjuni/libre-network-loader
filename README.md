@@ -1,7 +1,6 @@
-# Wii Network Loader
-A network/SD loader for the Wii.
+# libre-network-loader
 
-IMPORTANT (If using this for str2hax): Please make sure you update the Makefile line `include $(DEVKITPPC)/wii_rules` to point to a version of libogc that is built with -Os otherwise your payload will not fit in memory.
+A network/SD loader for the Wii.
 
 If you make any changes to elf loading then you have to copy the updated `elf_loader.h` file from `elf_loader` to `source` to build the loader with it.
 
