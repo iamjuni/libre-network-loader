@@ -297,7 +297,6 @@ void* recv_headers(int sock) {
 		char* current_header = malloc(1);
 		if (!current_header) goto err_out;
 		char* write_pointer = current_header;
-		char* new_header = NULL;
 
 		char* name_field = NULL;
 		char* value_field = NULL;
@@ -425,7 +424,7 @@ void free_http_headers(struct http_headers* hdrs) {
 	free(hdrs);
 }
 
-char upppercase(char c) {
+char uppercase(char c) {
 	if (c >= 'a' && c <= 'z')
 		return c - 0x20;
 	return c;
@@ -462,7 +461,7 @@ int compare_headers(const char* hdr1, const char* hdr2) {
 	if (*start1 == 0 && *start2 == 0)
 		return 0;
 	
-	while (upppercase(*start1++) == upppercase(*start2++)) {
+	while (uppercase(*start1++) == uppercase(*start2++)) {
 		if (start1 == end1 && start2 == end2)
 			return 0;
 	}
