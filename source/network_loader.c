@@ -293,32 +293,32 @@ void* recv_headers(int sock) {
 	
 	do {
 		last_header = 1;
-		
+
 		char* current_header = malloc(1);
+		if (!current_header) goto err_out;
 		char* write_pointer = current_header;
 		char* new_header = NULL;
-		
+
 		char* name_field = NULL;
 		char* value_field = NULL;
-		
+
 		int return_recv = 0;
 		int header_field_done = 0;
 		int done = 0;
 		char current;
-		
+
 		int bytes_read = 0;
-		
+
 		while (!done && (bytes_read = net_read(sock, &current, 1)) >= 0) {
 			if (bytes_read == 0)
 				continue;
-			
+
 			switch (current) {
 				case 0x0d:
 					if (!return_recv) {
 						return_recv = 1;
 						break;
 					}
-					
 					add_char(current);
 					break;
 				case 0x0a:
@@ -327,7 +327,6 @@ void* recv_headers(int sock) {
 						add_char(0x00);
 						break;
 					}
-					
 					add_char(current);
 					break;
 				case ':':
@@ -336,24 +335,28 @@ void* recv_headers(int sock) {
 						add_char(0x00);
 						name_field = current_header;
 						current_header = malloc(1);
+						if (!current_header) {
+							free(name_field);
+							current_header = NULL; // So we don't free it again
+							goto err_out;
+						}
 						write_pointer = current_header;
 						break;
-					} 
+					}
 					// FALLTHROUGH
 				default:
 					last_header = 0;
-					
+
 					if (return_recv) {
 						return_recv = 0;
 						add_char(0x0d);
 					}
-					
 					add_char(current);
 					break;
 			}
 		}
-		
-		//Check if only \r\n was sent
+
+		// Empty line (end of headers)
 		if ((u32)current_header == ((u32)write_pointer - 1)) {
 			free(current_header);
 		} else {
@@ -361,31 +364,36 @@ void* recv_headers(int sock) {
 				value_field = current_header;
 			else
 				name_field = current_header;
-			
-			// We need to add it to the list
+
 			struct http_headers* tmp_hdrs = realloc(hdrs, sizeof(struct http_headers) + ((num_headers + 1) * sizeof(t_header)));
 			if (tmp_hdrs == NULL) {
-				printf("Out of memory!\n");
+				// Free current_header if it's not yet assigned
+				if (current_header && current_header != name_field && current_header != value_field) {
+					free(current_header);
+				}
+				free(name_field);
+				free(value_field);
 				goto err_out;
 			}
-			num_headers++; // Only add one after "goto err_out" which expects num_headers to still be accurate.
 			hdrs = tmp_hdrs;
-			
-			hdrs->headers[num_headers - 1].name = name_field;
-			hdrs->headers[num_headers - 1].value = value_field;
+
+			hdrs->headers[num_headers].name = name_field;
+			hdrs->headers[num_headers].value = value_field;
+			num_headers++;
 		}
 	} while (!last_header);
-	
+
 	hdrs->num_headers = num_headers;
-	
 	return hdrs;
-	
-	err_out:
-	for (u32 i = 0; i < num_headers; i++) {
-		free(hdrs->headers[i].name);
-		free(hdrs->headers[i].value);
+
+err_out:
+	if (hdrs) {
+		for (u32 i = 0; i < num_headers; i++) {
+			free(hdrs->headers[i].name);
+			free(hdrs->headers[i].value);
+		}
+		free(hdrs);
 	}
-	free(hdrs);
 	return NULL;
 }
 
