@@ -268,15 +268,19 @@ struct http_headers {
 };
 
 #define add_char(x) \
-	*write_pointer++ = x; \
-	new_header = realloc(current_header, write_pointer - current_header + 1); \
-	if (new_header == NULL) { \
-		free(current_header); \
-		printf("Out of memory!\n"); \
-		goto err_out; \
-	} \
-	write_pointer = (char*)((u32)new_header + (u32)write_pointer - (u32)current_header); \
-	current_header = new_header;
+{ \
+    size_t offset = write_pointer - current_header; \
+    new_header = realloc(current_header, offset + 2); /* +1 for new char, +1 for null terminator */ \
+    if (new_header == NULL) { \
+        free(current_header); \
+        printf("Out of memory!\n"); \
+        goto err_out; \
+    } \
+    current_header = new_header; \
+    write_pointer = current_header + offset; \
+    *write_pointer++ = x; \
+}
+
 
 void* recv_headers(int sock) {
 	int last_header = 1;
