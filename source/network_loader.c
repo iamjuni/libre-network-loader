@@ -1,3 +1,17 @@
+static int add_char_func(char x, char **current_header_ptr, char **write_pointer_ptr) {
+    size_t offset = *write_pointer_ptr - *current_header_ptr;
+    char *new_header = realloc(*current_header_ptr, offset + 2);
+    if (new_header == NULL) {
+        free(*current_header_ptr);
+        printf("Out of memory!\n");
+        return -1;
+    }
+    *current_header_ptr = new_header;
+    *write_pointer_ptr = new_header + offset;
+    *(*write_pointer_ptr)++ = x;
+    return 0;
+}
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -267,21 +281,6 @@ struct http_headers {
 	t_header headers[];
 };
 
-#define add_char(x) \
-{ \
-    size_t offset = write_pointer - current_header; \
-    new_header = realloc(current_header, offset + 2); /* +1 for new char, +1 for null terminator */ \
-    if (new_header == NULL) { \
-        free(current_header); \
-        printf("Out of memory!\n"); \
-        goto err_out; \
-    } \
-    current_header = new_header; \
-    write_pointer = current_header + offset; \
-    *write_pointer++ = x; \
-}
-
-
 void* recv_headers(int sock) {
 	int last_header = 1;
 	int num_headers = 0;
@@ -319,20 +318,32 @@ void* recv_headers(int sock) {
 						return_recv = 1;
 						break;
 					}
-					add_char(current);
+					if (add_char_func(current, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 					break;
 				case 0x0a:
 					if (return_recv) {
 						done = 1;
-						add_char(0x00);
+						if (add_char_func(0x00, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 						break;
 					}
-					add_char(current);
+					if (add_char_func(current, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 					break;
 				case ':':
 					if (!header_field_done) {
 						header_field_done = 1;
-						add_char(0x00);
+						if (add_char_func(0x00, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 						name_field = current_header;
 						current_header = malloc(1);
 						if (!current_header) {
@@ -349,9 +360,15 @@ void* recv_headers(int sock) {
 
 					if (return_recv) {
 						return_recv = 0;
-						add_char(0x0d);
+						if (add_char_func(0x0d, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 					}
-					add_char(current);
+					if (add_char_func(current, &current_header, &write_pointer) != 0) {
+    goto err_out;
+}
+
 					break;
 			}
 		}
