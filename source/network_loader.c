@@ -1,3 +1,14 @@
+#include <stdio.h>
+#include <stddef.h> 
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+#include <ogcsys.h>
+#include <gccore.h>
+#include <network.h>
+#include <errno.h>
+#include <ogc/machine/processor.h>
+
 static int add_char_func(char x, char **current_header_ptr, char **write_pointer_ptr) {
     size_t offset = *write_pointer_ptr - *current_header_ptr;
     char *new_header = realloc(*current_header_ptr, offset + 2);
@@ -11,16 +22,6 @@ static int add_char_func(char x, char **current_header_ptr, char **write_pointer
     *(*write_pointer_ptr)++ = x;
     return 0;
 }
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
-#include <ogcsys.h>
-#include <gccore.h>
-#include <network.h>
-#include <errno.h>
-#include <ogc/machine/processor.h>
 
 #define RESET_DNS 1
 
