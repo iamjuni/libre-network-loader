@@ -6,6 +6,8 @@
 ifeq ($(strip $(DEVKITPPC)),)
 $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
 endif
+CFLAGS := -Os
+CXXFLAGS := -Os
 
 include $(DEVKITPPC)/wii_rules
 
