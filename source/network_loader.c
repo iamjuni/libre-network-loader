@@ -290,6 +290,8 @@ void* recv_headers(int sock) {
 	struct http_headers* hdrs = malloc(sizeof(struct http_headers));
 	if (hdrs == NULL) {
 		printf("Out of memory!\n");
+		free(hdrs); // fix memory leak
+		hdrs = NULL; // send it to null just in case
 		return NULL;
 	}
 	
