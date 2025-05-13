@@ -151,6 +151,8 @@ extern u32 fat_file_size;
 	void *code_buffer = malloc(fat_file_size);
 	if (code_buffer == NULL) {
 		printf("Out of memory!\n");
+		free(code_buffer); // free code_buffer so no memory leak
+		code_buffer = NULL; // send it to null for safety
 		return;
 	}
 	err = fat_read(code_buffer, fat_file_size);
