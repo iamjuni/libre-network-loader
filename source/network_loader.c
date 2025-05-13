@@ -385,17 +385,29 @@ void* recv_headers(int sock) {
 			else
 				name_field = current_header;
 
-			struct http_headers* tmp_hdrs = realloc(hdrs, sizeof(struct http_headers) + ((num_headers + 1) * sizeof(t_header)));
-			if (tmp_hdrs == NULL) {
-				// Free current_header if it's not yet assigned
-				if (current_header && current_header != name_field && current_header != value_field) {
-					free(current_header);
-				}
-				free(name_field);
-				free(value_field);
-				goto err_out;
-			}
-			hdrs = tmp_hdrs;
+// Safe realloc
+struct http_headers* tmp_hdrs = realloc(hdrs, sizeof(struct http_headers) + ((num_headers + 1) * sizeof(t_header)));
+if (tmp_hdrs == NULL) {
+	// Clean up previously allocated memory
+	if (current_header && current_header != name_field && current_header != value_field)
+	free(current_header);
+	free(name_field);
+	free(value_field);
+   	current_header = NULL;
+    	name_field = NULL;
+    	value_field = NULL;
+	// Don't forget to free each previously stored header field
+	for (u32 i = 0; i < num_headers; i++) {
+		free(hdrs->headers[i].name);
+		free(hdrs->headers[i].value);
+	}
+	free(hdrs); // Free the original block
+	hdrs = NULL;
+	return NULL;
+}
+
+// realloc succeeded — safe to update
+hdrs = tmp_hdrs;
 
 			hdrs->headers[num_headers].name = name_field;
 			hdrs->headers[num_headers].value = value_field;
